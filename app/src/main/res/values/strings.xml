@@ -9,4 +9,5 @@
     <string name="no">No</string>
     <string name="delete_alert">Delete alert!!</string>
     <string name="delete_message">Do you want to delete %s?</string>
+    <string name="no_data">No data</string>
 </resources>

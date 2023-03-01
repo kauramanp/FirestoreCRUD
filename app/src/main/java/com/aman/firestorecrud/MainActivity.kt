@@ -19,6 +19,7 @@ import com.aman.firestorecrud.interfaces.ClickType
 import com.aman.firestorecrud.models.UserModel
 import com.aman.firestorecrud.recyclers.UserAdapter
 import com.google.firebase.firestore.DocumentChange
+import com.google.firebase.firestore.QueryDocumentSnapshot
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 
@@ -30,34 +31,40 @@ class MainActivity : AppCompatActivity() {
     lateinit var adapter: UserAdapter
     val db = Firebase.firestore
     lateinit var layoutManager: LayoutManager
-    private  val TAG = MainActivity::class.java.canonicalName
+    private val TAG = MainActivity::class.java.canonicalName
     var collectionName = "Users"
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         //initialising binding for the view
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
+        binding.isLoading = true
+        binding.isEmpty = false
         //initialisng adapter and click listener
-        adapter = UserAdapter(userModelList, object : ClickInterface{
-            override fun onClick(position: Int, clickType: ClickType?) : Boolean {
-                when(clickType){
+        adapter = UserAdapter(userModelList, object : ClickInterface {
+            override fun onClick(position: Int, clickType: ClickType?): Boolean {
+                when (clickType) {
                     ClickType.EDIT -> showDialogFun(position)
-                    ClickType.DELETE-> {
+                    ClickType.DELETE -> {
                         AlertDialog.Builder(this@MainActivity).apply {
                             setTitle(resources.getString(R.string.delete_alert))
                             //name from the model is passed to string.xml file key to show there with text
-                            setTitle(resources.getString(R.string.delete_message, userModelList[position].name.toString()))
-                            setPositiveButton(resources.getString(R.string.yes)){_,_->
+                            setTitle(
+                                resources.getString(
+                                    R.string.delete_message,
+                                    userModelList[position].name.toString()
+                                )
+                            )
+                            setPositiveButton(resources.getString(R.string.yes)) { _, _ ->
                                 //deleting the particular collection from firestore
-                                db.collection(collectionName).document(userModelList[position].id?:"").delete()
-
+                                db.collection(collectionName)
+                                    .document(userModelList[position].id ?: "").delete()
                             }
-                            setNegativeButton(resources.getString(R.string.no)){_,_->}
+                            setNegativeButton(resources.getString(R.string.no)) { _, _ -> }
                             show()
                         }
                     }
-                    else->{}
+                    else -> {}
                 }
                 return true
             }
@@ -67,8 +74,7 @@ class MainActivity : AppCompatActivity() {
         binding.recycler.layoutManager = layoutManager
         binding.recycler.adapter = adapter
 
-        db.collection(collectionName
-)
+        db.collection(collectionName)
             .addSnapshotListener { snapshots, e ->
                 if (e != null) {
                     return@addSnapshotListener
@@ -76,38 +82,34 @@ class MainActivity : AppCompatActivity() {
                 for (snapshot in snapshots!!.documentChanges) {
                     when (snapshot.type) {
                         DocumentChange.Type.ADDED -> {
-                            val userModel:UserModel?= snapshot.document.toObject(UserModel::class.java)
-                            userModel?.id = snapshot.document.id?:""
+                            val userModel = convertObject( snapshot.document)
                             userModel?.let { userModelList.add(it) }
-                            Log.e(TAG,"userModelList ${userModelList.size}")
+                            Log.e(TAG, "userModelList ${userModelList.size}")
                             adapter.notifyDataSetChanged()
                         }
                         DocumentChange.Type.MODIFIED -> {
-                            val userModel:UserModel?= snapshot.document.toObject(UserModel::class.java)
-                            userModel?.id = snapshot.document.id?:""
+                            val userModel = convertObject( snapshot.document)
                             userModel?.let {
-                                var index = -1
-                                index = userModelList.indexOfFirst { element-> element.id == it.id }
-                                if(index>-1)
+                               var index = getIndex(userModel)
+                                if (index > -1)
                                     userModelList.set(index, it)
                             }
                             adapter.notifyDataSetChanged()
-
-
                         }
                         DocumentChange.Type.REMOVED -> {
-                            val userModel:UserModel?= snapshot.document.toObject(UserModel::class.java)
+                            val userModel = convertObject( snapshot.document)
                             userModel?.let {
-                                var index = -1
-                                index = userModelList.indexOfFirst { element-> element.id == it.id }
-                                if(index>-1)
+                                var index = getIndex(userModel)
+                                if (index > -1)
                                     userModelList.removeAt(index)
                             }
                             adapter.notifyDataSetChanged()
-
                         }
                     }
                 }
+                binding.isEmpty = userModelList.isNullOrEmpty()
+                binding.isLoading = false
+
             }
     }
 
@@ -127,64 +129,90 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun showDialogFun(position: Int = -1){
+    fun showDialogFun(position: Int = -1) {
         var dialogBinding = LayoutAddUpdateBinding.inflate(layoutInflater)
-       var dialog = Dialog(this).apply {
+        var dialog = Dialog(this).apply {
             setContentView(dialogBinding.root)
-            window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            window?.setLayout(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
             show()
         }
-        dialogBinding.etAddress.doOnTextChanged { text, _,_,_ ->
-            var textLength = text?.length?:0
-            if(textLength>0){
+        dialogBinding.etAddress.doOnTextChanged { text, _, _, _ ->
+            var textLength = text?.length ?: 0
+            if (textLength > 0) {
                 dialogBinding.tilAddress.isErrorEnabled = false
-            }else{
+            } else {
                 dialogBinding.tilAddress.isErrorEnabled = true
                 dialogBinding.tilAddress.error = resources.getString(R.string.enter_address)
             }
         }
-        dialogBinding.etName.doOnTextChanged { text, _,_,_ ->
-            var textLength = text?.length?:0
-            if(textLength>0){
+        dialogBinding.etName.doOnTextChanged { text, _, _, _ ->
+            var textLength = text?.length ?: 0
+            if (textLength > 0) {
                 dialogBinding.tilName.isErrorEnabled = false
-            }else{
+            } else {
                 dialogBinding.tilName.isErrorEnabled = true
                 dialogBinding.tilName.error = resources.getString(R.string.enter_name)
             }
         }
 
         dialogBinding.position = position
-        if(position>-1){
+        if (position > -1) {
             dialogBinding.userModel = userModelList[position]
-            dialogBinding.btnClick.setText(resources.getString(R.string.add))
-        }else{
+        } else {
             dialogBinding.userModel = UserModel()
-            dialogBinding.btnClick.setText(resources.getString(R.string.update))
-
         }
 
         dialogBinding.btnClick.setOnClickListener {
-            if(dialogBinding.etName.text.toString().isNullOrEmpty()){
+            if (dialogBinding.etName.text.toString().isNullOrEmpty()) {
                 dialogBinding.tilName.isErrorEnabled = true
                 dialogBinding.tilName.error = resources.getString(R.string.enter_name)
-            }else  if(dialogBinding.etAddress.text.toString().isNullOrEmpty()){
+            } else if (dialogBinding.etAddress.text.toString().isNullOrEmpty()) {
                 dialogBinding.tilAddress.isErrorEnabled = true
                 dialogBinding.tilAddress.error = resources.getString(R.string.enter_address)
-            }else{
-                //add in firebase
-                System.out.println("position $position")
-                if(position>-1){
-                    userModelList[position].name =  dialogBinding.etName.text.toString()
-                    userModelList[position].address =  dialogBinding.etAddress.text.toString()
-                    db.collection(collectionName).document(userModelList[position].id?:"").set(UserModel( dialogBinding.etName.text.toString(), dialogBinding.etAddress.text.toString(), userModelList[position].id?:""))
-
+            } else {
+                //update in firestore
+                if (position > -1) {
+                    userModelList[position].name = dialogBinding.etName.text.toString()
+                    userModelList[position].address = dialogBinding.etAddress.text.toString()
+                    db.collection(collectionName).document(userModelList[position].id ?: "").set(
+                        UserModel(
+                            dialogBinding.etName.text.toString(),
+                            dialogBinding.etAddress.text.toString(),
+                            userModelList[position].id ?: ""
+                        )
+                    )
                     dialog.dismiss()
-
-                }else{
-                    db.collection(collectionName).add(UserModel( dialogBinding.etName.text.toString(), dialogBinding.etAddress.text.toString()))
+                } else {
+                    //add in firestore
+                    db.collection(collectionName).add(
+                        UserModel(
+                            dialogBinding.etName.text.toString(),
+                            dialogBinding.etAddress.text.toString()
+                        )
+                    )
                     dialog.dismiss()
                 }
             }
         }
+    }
+
+    fun convertObject(snapshot: QueryDocumentSnapshot) : UserModel?{
+        val userModel: UserModel? =
+            snapshot.toObject(UserModel::class.java)
+        userModel?.id = snapshot.id ?: ""
+        return userModel
+    }
+
+    fun getIndex(userModel: UserModel) : Int{
+        var index = -1
+        index = userModelList.indexOfFirst { element ->
+            element.name?.equals(userModel.name) == true && element.address?.equals(
+                userModel.address
+            ) == true
+        }
+        return index
     }
 }

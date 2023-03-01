@@ -24,7 +24,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textSize="@dimen/size_20sp"
-        android:text="@string/add"
+        android:text="@{position &gt; -1 ? @string/update: @string/add}"
         android:id="@+id/tvTitle"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -72,7 +72,7 @@
         android:layout_marginTop="@dimen/margin_10dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tilAddress"
-        android:text="@{userModel.name.isEmpty()? @string/add: @string/update}"/>
+        android:text="@{position &gt; -1 ? @string/update: @string/add}"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>
