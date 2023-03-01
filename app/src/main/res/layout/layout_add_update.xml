@@ -10,7 +10,7 @@
         <import type="com.aman.firestorecrud.interfaces.ClickType"/>
         <variable
             name="click"
-            type="com.aman.firestorecrud.interfaces.clickInterface" />
+            type="com.aman.firestorecrud.interfaces.ClickInterface" />
         <variable
             name="position"
             type="Integer" />

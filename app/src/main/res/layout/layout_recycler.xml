@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
     <data>
         <variable
             name="userModel"
@@ -10,17 +11,21 @@
             type="Integer" />
         <variable
             name="clickListener"
-            type="com.aman.firestorecrud.interfaces.clickInterface" />
+            type="com.aman.firestorecrud.interfaces.ClickInterface" />
+        <import type="com.aman.firestorecrud.interfaces.ClickType"/>
     </data>
 <androidx.constraintlayout.widget.ConstraintLayout
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:onClick="@{()->}">
+    android:layout_marginTop="@dimen/margin_5dp"
+    android:onLongClickListener="@{()->clickListener.onClick(position,ClickType.DELETE)}"
+    android:onClick="@{()->clickListener.onClick(position,ClickType.EDIT)}">
 
     <TextView
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:id="@+id/tvName"
+        tools:text="Test"
         android:text="@{userModel.name}"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
