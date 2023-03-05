@@ -2,11 +2,13 @@ package com.aman.firestorecrud
 
 import android.app.AlertDialog
 import android.app.Dialog
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.doOnTextChanged
 import androidx.navigation.ui.AppBarConfiguration
@@ -18,6 +20,10 @@ import com.aman.firestorecrud.interfaces.ClickInterface
 import com.aman.firestorecrud.interfaces.ClickType
 import com.aman.firestorecrud.models.UserModel
 import com.aman.firestorecrud.recyclers.UserAdapter
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentChange
 import com.google.firebase.firestore.QueryDocumentSnapshot
 import com.google.firebase.firestore.ktx.firestore
@@ -33,6 +39,12 @@ class MainActivity : AppCompatActivity() {
     lateinit var layoutManager: LayoutManager
     private val TAG = MainActivity::class.java.canonicalName
     var collectionName = "Users"
+    lateinit var mGoogleSignInClient: GoogleSignInClient
+
+    private val auth by lazy {
+        FirebaseAuth.getInstance()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         //initialising binding for the view
@@ -40,6 +52,12 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
         binding.isLoading = true
         binding.isEmpty = false
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(getString(R.string.default_web_client_id))
+            .requestEmail()
+            .build()
+        mGoogleSignInClient= GoogleSignIn.getClient(this,gso)
+
         //initialisng adapter and click listener
         adapter = UserAdapter(userModelList, object : ClickInterface {
             override fun onClick(position: Int, clickType: ClickType?): Boolean {
@@ -123,6 +141,15 @@ class MainActivity : AppCompatActivity() {
         return when (item.itemId) {
             R.id.action_add -> {
                 showDialogFun()
+                true
+            }
+            R.id.action_logout -> {
+                mGoogleSignInClient.signOut().addOnCompleteListener {
+                    val intent= Intent(this, LoginActivity::class.java)
+                    Toast.makeText(this,"Logging Out",Toast.LENGTH_SHORT).show()
+                    startActivity(intent)
+                    finish()
+                }
                 true
             }
             else -> super.onOptionsItemSelected(item)
