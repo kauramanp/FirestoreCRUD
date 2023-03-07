@@ -36,6 +36,8 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        auth = Firebase.auth
+
         if(auth.currentUser != null){
             updateUI(auth.currentUser)
         }
