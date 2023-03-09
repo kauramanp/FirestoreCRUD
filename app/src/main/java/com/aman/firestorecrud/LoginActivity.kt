@@ -59,7 +59,6 @@ class LoginActivity : AppCompatActivity() {
 
         binding?.signin?.setOnClickListener {
             val signInIntent = googleSignInClient.signInIntent
-           // startActivityForResult(signInIntent, RC_SIGN_IN)
             signInIntentResult.launch(signInIntent)
         }
     }
@@ -91,6 +90,5 @@ class LoginActivity : AppCompatActivity() {
     }
 
     companion object {
-        const val RC_SIGN_IN = 1001
     }
 }
